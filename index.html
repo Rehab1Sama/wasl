@@ -703,8 +703,16 @@ function handleCall(st) {
 function newPC() {
   const iceServers = [{urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302']}];
   const t = turnConf();
-  if (t) iceServers.push({urls: t.turnUrl.split(',').map(s => s.trim()).filter(Boolean), username: t.turnUser || '', credential: t.turnPass || ''});
-  const pc = new RTCPeerConnection({iceServers});
+  if (t) {
+    const urls = t.turnUrl.split(/[,\s]+/).map(u => u.trim()).filter(Boolean).map(u => {
+      u = u.replace(/^https?:\/\//i, '').replace(/\/$/, '');
+      return /^(turns?|stun):/i.test(u) ? u : 'turn:' + u;
+    });
+    if (urls.length) iceServers.push({urls, username: (t.turnUser || '').trim(), credential: (t.turnPass || '').trim()});
+  }
+  let pc;
+  try { pc = new RTCPeerConnection({iceServers}); }
+  catch (e) { setStatus('إعداد TURN غير صحيح، تأكدي من الرابط واسم المستخدم وكلمة المرور'); pc = new RTCPeerConnection({iceServers: iceServers.slice(0, 1)}); }
   pc.ontrack = e => {
     const v = $('#remoteV'); const s = e.streams[0] || new MediaStream([e.track]);
     if (v.srcObject !== s) { v.srcObject = s; v.play().catch(() => {}); }
@@ -766,7 +774,11 @@ async function startCall(video) {
     if (call !== c) return;
     setCallText('يرن…'); S.fast = true; kick();
     c.ringTimer = setTimeout(() => { if (call === c && !c.remoteSet) hangup('ما ردَّت'); }, 45000);
-  } catch (e) { if (call === c) endCall('تعذَّر بدء المكالمة'); }
+  } catch (e) {
+    if (call !== c) return;
+    endCall('تعذَّر بدء المكالمة');
+    setStatus('سبب المشكلة: ' + (e.status ? 'GitHub ' + e.status : (e.name || '') + ' ' + (e.message || '')).slice(0, 140));
+  }
 }
 function showIncoming(st) {
   S.incoming = st;
