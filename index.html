@@ -86,7 +86,7 @@ textarea{flex:1;border:0;outline:0;resize:none;background:none;font:inherit;font
 .cinfo{position:absolute;top:22%;left:0;right:0;text-align:center}
 .cinfo .av{width:104px;height:104px;font-size:42px;margin:0 auto 14px;background:#ffffff33;box-shadow:0 0 0 14px #ffffff1a,0 0 0 30px #ffffff10}
 .cinfo b{font-size:25px;font-weight:600;display:block;text-shadow:0 1px 6px #1e334640}
-.cinfo span{opacity:.9;font-size:15px;display:block;margin-top:6px;min-height:22px}
+.cinfo span{opacity:.9;font-size:15px;display:block;margin-top:6px;min-height:22px;white-space:pre-line;padding:0 24px;direction:auto}
 .video:not(.audioOnly) .cinfo{top:auto;bottom:118px}
 .video:not(.audioOnly) .cinfo .av{display:none}
 .video:not(.audioOnly) .cinfo b{font-size:19px;display:inline}
@@ -158,6 +158,7 @@ textarea{flex:1;border:0;outline:0;resize:none;background:none;font:inherit;font
     <div class="row">
       <button class="btn ghost" id="sNotif">تفعيل الإشعارات</button>
     </div>
+    <p style="text-align:center;margin:14px 0 0;font-size:12px">الإصدار 3</p>
   </div>
 </div>
 
@@ -776,8 +777,9 @@ async function startCall(video) {
     c.ringTimer = setTimeout(() => { if (call === c && !c.remoteSet) hangup('ما ردَّت'); }, 45000);
   } catch (e) {
     if (call !== c) return;
-    endCall('تعذَّر بدء المكالمة');
-    setStatus('سبب المشكلة: ' + (e.status ? 'GitHub ' + e.status : (e.name || '') + ' ' + (e.message || '')).slice(0, 140));
+    const why = (e.status ? 'GitHub ' + e.status : (e.name || '') + ' ' + (e.message || '')).slice(0, 120);
+    endCall('تعذَّر بدء المكالمة\n' + why);
+    setStatus('سبب المشكلة: ' + why);
   }
 }
 function showIncoming(st) {
@@ -837,7 +839,7 @@ function endCall(text) {
   try { c.pc && c.pc.close(); } catch (e) {}
   if (c.stream) c.stream.getTracks().forEach(t => t.stop());
   $('#remoteV').srcObject = null; $('#localV').srcObject = null;
-  if (text) { setCallText(text); setTimeout(() => { if (!call) hideCallUI(); }, 1800); } else hideCallUI();
+  if (text) { setCallText(text); setTimeout(() => { if (!call) hideCallUI(); }, text.includes('\n') ? 6000 : 1800); } else hideCallUI();
 }
 function toggleTrack(kind, btn) {
   if (!call || !call.stream) return;
