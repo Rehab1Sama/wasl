@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
+<meta name="theme-color" content="#6aa8d6">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>وَصْل</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef6fc; --paper:#ffffff; --sage:#6aa8d6; --sage-d:#6aa8d629; --sage-dk:#3c719c;
+  --mine:#d4e9f8; --ink:#2b3a47; --muted:#7a8a98; --rose:#f2b8c6; --line:#dbe8f3;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif}
+button{font:inherit;border:0;background:none;color:inherit;cursor:pointer}
+svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#app{display:flex;flex-direction:column;height:100dvh;max-width:720px;margin:0 auto;background:var(--bg)}
+header{display:flex;align-items:center;gap:10px;padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top));background:var(--sage);color:#fff}
+.av{width:40px;height:40px;border-radius:50%;background:#ffffff2e;display:grid;place-items:center;font-weight:600;font-size:18px;flex:none}
+.who{flex:1;min-width:0}
+.who b{display:block;font-weight:600;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who small{opacity:.8;font-size:12px}
+.hbtn{width:40px;height:40px;border-radius:50%;display:grid;place-items:center}
+.hbtn:active{background:#ffffff26}
+#status{font-size:12.5px;text-align:center;background:#fde8ee;color:#8a4a5a;padding:4px 10px;display:none}
+#status.on{display:block}
+main{flex:1;overflow-y:auto;padding:10px 10px 4px;
+  background-image:radial-gradient(#6aa8d61a 1px,transparent 1px);background-size:18px 18px}
+#older{display:none;margin:4px auto 10px;padding:6px 14px;border-radius:20px;background:var(--paper);color:var(--sage-dk);font-size:13px;border:1px solid var(--line)}
+#older.on{display:block}
+.empty{text-align:center;color:var(--muted);margin-top:30vh;font-size:15px;line-height:1.9}
+.sep{text-align:center;margin:12px 0 8px}
+.sep span{background:#dcebf7;color:#4f6b82;font-size:12px;padding:3px 12px;border-radius:12px}
+.msg{display:flex;margin:3px 0}
+.msg.mine{justify-content:flex-end}
+.bubble{max-width:80%;padding:7px 10px 5px;border-radius:14px;background:var(--paper);box-shadow:0 1px 1px #0000000f;font-size:15.5px;line-height:1.6;word-wrap:break-word;overflow-wrap:anywhere;position:relative}
+.mine .bubble{background:var(--mine);border-end-end-radius:4px}
+.theirs .bubble{border-end-start-radius:4px}
+.bubble a{color:var(--sage-dk)}
+.meta{display:flex;gap:4px;align-items:center;justify-content:flex-end;font-size:11px;color:var(--muted);margin-top:2px}
+.meta svg{width:13px;height:13px}
+.failed .meta{color:#b5523f;cursor:pointer}
+.bubble audio{width:240px;max-width:100%;height:40px;display:block}
+.bubble video,.bubble img{display:block;max-width:100%;max-height:340px;border-radius:10px;background:#0001}
+.bubble .cap{margin-top:5px}
+.loading{font-size:13px;color:var(--muted);padding:6px 4px}
+footer{display:flex;align-items:flex-end;gap:6px;padding:8px;padding-bottom:calc(8px + env(safe-area-inset-bottom));background:var(--bg)}
+.field{flex:1;display:flex;align-items:flex-end;background:var(--paper);border-radius:24px;padding:4px 6px;box-shadow:0 1px 2px #0000000f}
+textarea{flex:1;border:0;outline:0;resize:none;background:none;font:inherit;font-size:16px;line-height:1.5;max-height:120px;padding:7px 6px;color:var(--ink)}
+.ibtn{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--muted);flex:none}
+.big{width:48px;height:48px;border-radius:50%;background:var(--sage);color:#fff;display:grid;place-items:center;flex:none;box-shadow:0 2px 6px #3c719c40}
+.big:active{transform:scale(.95)}
+#rec{display:none;align-items:center;gap:10px;padding:10px 12px;padding-bottom:calc(10px + env(safe-area-inset-bottom));background:var(--paper)}
+#rec.on{display:flex}
+.dot{width:12px;height:12px;border-radius:50%;background:#d0574a;animation:bl 1s infinite}
+@keyframes bl{50%{opacity:.25}}
+#recT{flex:1;font-variant-numeric:tabular-nums;font-size:17px}
+.sheet{position:fixed;inset:0;background:#2b3a4766;display:none;align-items:flex-end;justify-content:center;z-index:20}
+.sheet.on{display:flex}
+.card{background:var(--paper);width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));max-height:92dvh;overflow:auto}
+.card h2{margin:0 0 4px;font-size:20px;color:var(--sage-dk)}
+.card p{margin:0 0 14px;color:var(--muted);font-size:13.5px;line-height:1.8}
+.card label{display:block;font-size:13.5px;margin:12px 0 5px;font-weight:500}
+.card input{width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:#fff;font:inherit;font-size:16px;direction:ltr;text-align:left}
+.card input.rtl{direction:rtl;text-align:right}
+.card details{margin-top:14px;font-size:13.5px}
+.card summary{color:var(--sage-dk);cursor:pointer}
+.row{display:flex;gap:8px;margin-top:18px}
+.btn{flex:1;padding:12px;border-radius:14px;background:var(--sage);color:#fff;font-weight:600;font-size:16px}
+.btn.ghost{background:#e6f1fa;color:var(--sage-dk)}
+.err{color:#b5523f;font-size:13px;min-height:18px;margin-top:8px}
+#callUI{position:fixed;inset:0;color:#fff;display:none;z-index:30;background:linear-gradient(170deg,#8cc4ea 0%,#5f9fd0 45%,#3c719c 100%)}
+#callUI.on{display:block}
+#callUI::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 30%,#ffffff40,transparent 60%);pointer-events:none}
+#remoteV{position:absolute;top:calc(14px + env(safe-area-inset-top));left:14px;right:14px;bottom:200px;width:calc(100% - 28px);height:calc(100% - 214px - env(safe-area-inset-top));object-fit:cover;border-radius:26px;background:#3c719c55;box-shadow:0 8px 26px #1e33463d}
+#localV{position:absolute;top:calc(28px + env(safe-area-inset-top));left:28px;width:96px;height:132px;object-fit:cover;border-radius:16px;background:#3c719c;transform:scaleX(-1);border:3px solid #ffffffcc;box-shadow:0 4px 14px #1e334655}
+.audioOnly #remoteV,.audioOnly #localV{display:none}
+.cinfo{position:absolute;top:22%;left:0;right:0;text-align:center}
+.cinfo .av{width:104px;height:104px;font-size:42px;margin:0 auto 14px;background:#ffffff33;box-shadow:0 0 0 14px #ffffff1a,0 0 0 30px #ffffff10}
+.cinfo b{font-size:25px;font-weight:600;display:block;text-shadow:0 1px 6px #1e334640}
+.cinfo span{opacity:.9;font-size:15px;display:block;margin-top:6px;min-height:22px}
+.video:not(.audioOnly) .cinfo{top:auto;bottom:118px}
+.video:not(.audioOnly) .cinfo .av{display:none}
+.video:not(.audioOnly) .cinfo b{font-size:19px;display:inline}
+.video:not(.audioOnly) .cinfo span{display:inline;margin:0 8px 0 0}
+.cbar{position:absolute;bottom:calc(28px + env(safe-area-inset-bottom));left:0;right:0;display:flex;justify-content:center;gap:22px}
+.cb{width:60px;height:60px;border-radius:50%;background:#ffffff33;display:grid;place-items:center;backdrop-filter:blur(6px)}
+.cb svg{width:26px;height:26px}
+.cb.off{background:#fff;color:#3c719c}
+.cb.red{background:#e0707f}
+.cb.green{background:#5bb38a}
+#incoming .card{text-align:center}
+#incoming .av{width:80px;height:80px;font-size:34px;margin:6px auto 10px;background:var(--sage);color:#fff}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="av" id="hav">و</div>
+    <div class="who"><b id="hname">وَصْل</b><small id="hsub">رسائل ومكالمات</small></div>
+    <button class="hbtn" id="bAudio" title="مكالمة صوتية"><svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></button>
+    <button class="hbtn" id="bVideo" title="مكالمة فيديو"><svg viewBox="0 0 24 24"><path d="m23 7-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></button>
+    <button class="hbtn" id="bSet" title="الإعدادات"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+  </header>
+  <div id="status"></div>
+  <main id="list">
+    <button id="older">رسائل أقدم</button>
+    <div id="msgs"></div>
+  </main>
+  <footer id="composer">
+    <div class="field">
+      <button class="ibtn" id="bAttach" title="صورة أو مقطع"><svg viewBox="0 0 24 24"><path d="m21.4 11-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg></button>
+      <textarea id="txt" rows="1" placeholder="اكتبي رسالة…"></textarea>
+    </div>
+    <button class="big" id="bMain" title="تسجيل صوتي"></button>
+  </footer>
+  <div id="rec">
+    <button class="ibtn" id="bRecX" title="إلغاء"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/></svg></button>
+    <div class="dot"></div>
+    <div id="recT">0:00</div>
+    <button class="big" id="bRecSend" title="إرسال"><svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
+  </div>
+</div>
+
+<div class="sheet" id="setup">
+  <div class="card">
+    <h2>إعداد وَصْل 🌧</h2>
+    <p>الرسائل تُحفظ في مستودع <b>خاص</b> على GitHub. تحتاجين اسمك، واسم المستودع، والتوكن (Token).</p>
+    <label for="sName">اسمك (يظهر لصديقتك)</label>
+    <input id="sName" class="rtl" placeholder="رِحاب">
+    <label for="sRepo">المستودع الخاص</label>
+    <input id="sRepo" placeholder="Rehab1Sama/wasl-data" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <label for="sToken">التوكن</label>
+    <input id="sToken" type="password" placeholder="github_pat_…" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <details>
+      <summary>إعدادات المكالمات (اختياري)</summary>
+      <p style="margin-top:8px">إذا ما اشتغلت المكالمات على بيانات الجوال، أضيفي هنا خادم TURN.</p>
+      <label for="sTurn">TURN URL</label>
+      <input id="sTurn" placeholder="turn:example.com:3478">
+      <label for="sTurnU">Username</label>
+      <input id="sTurnU">
+      <label for="sTurnP">Password</label>
+      <input id="sTurnP" type="password">
+    </details>
+    <div class="err" id="sErr"></div>
+    <div class="row">
+      <button class="btn" id="sSave">حفظ والدخول</button>
+      <button class="btn ghost" id="sClose">إغلاق</button>
+    </div>
+    <div class="row">
+      <button class="btn ghost" id="sNotif">تفعيل الإشعارات</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="incoming">
+  <div class="card">
+    <div class="av" id="inAv">؟</div>
+    <h2 id="inName"></h2>
+    <p id="inType"></p>
+    <div class="row">
+      <button class="btn" id="inOk" style="background:#5bb38a">قبول</button>
+      <button class="btn" id="inNo" style="background:#e0707f">رفض</button>
+    </div>
+  </div>
+</div>
+
+<div id="callUI">
+  <video id="remoteV" autoplay playsinline></video>
+  <video id="localV" autoplay playsinline muted></video>
+  <div class="cinfo"><div class="av" id="cAv">؟</div><b id="cName"></b><span id="cText"></span></div>
+  <div class="cbar">
+    <button class="cb" id="cMute" title="كتم"><svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4"/></svg></button>
+    <button class="cb" id="cCam" title="الكاميرا"><svg viewBox="0 0 24 24"><path d="m23 7-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></button>
+    <button class="cb red" id="cEnd" title="إنهاء"><svg viewBox="0 0 24 24" style="transform:rotate(135deg)"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></button>
+  </div>
+</div>
+
+<input type="file" id="file" accept="image/*,video/*" hidden>
+
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const API = 'https://api.github.com';
+const MAX_MB = 20;
+const ICON = {
+  mic:'<svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4"/></svg>',
+  send:'<svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>',
+  clock:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  check:'<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>',
+  warn:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>'
+};
+
+let cfg = null;
+try { cfg = JSON.parse(localStorage.getItem('wasl_cfg') || 'null'); } catch (e) { cfg = null; }
+const saveCfg = () => { try { localStorage.setItem('wasl_cfg', JSON.stringify(cfg)); } catch (e) {} };
+
+const S = {
+  msgs: new Map(), known: new Set(), dirSha: {}, days: [], loaded: new Set(), olderIdx: 0,
+  rootEtag: null, media: new Map(), partner: '', unread: 0, ready: false,
+  callEtag: null, callSha: null, callState: null, handled: new Set(), incoming: null,
+  timer: null, polling: false, fast: false, failCount: 0
+};
+let call = null;
+
+/* ---------- helpers ---------- */
+const rid = () => Math.random().toString(36).slice(2, 8);
+const dayOf = ts => new Date(ts).toISOString().slice(0, 10);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const linkify = s => s.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>').replace(/\n/g, '<br>');
+const initial = n => (n || '؟').trim().charAt(0) || '؟';
+const fmtTime = ts => new Date(ts).toLocaleTimeString('ar', {hour:'numeric', minute:'2-digit'});
+const mmss = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+
+function utf8ToB64(str) {
+  const b = new TextEncoder().encode(str); let bin = '';
+  for (let i = 0; i < b.length; i += 0x8000) bin += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+function b64ToUtf8(b64) {
+  const bin = atob(b64.replace(/\s/g, ''));
+  return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
+}
+function blobToB64(blob) {
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = () => res(String(fr.result).split(',')[1] || '');
+    fr.onerror = rej; fr.readAsDataURL(blob);
+  });
+}
+function extOf(mime, type) {
+  const m = (mime || '').toLowerCase();
+  if (m.includes('quicktime')) return 'mov';
+  if (m.includes('mp4')) return type === 'voice' ? 'm4a' : 'mp4';
+  if (m.includes('webm')) return 'webm';
+  if (m.includes('ogg')) return 'ogg';
+  if (m.includes('jpeg') || m.includes('jpg')) return 'jpg';
+  if (m.includes('png')) return 'png';
+  if (m.includes('gif')) return 'gif';
+  if (m.includes('webp')) return 'webp';
+  if (m.includes('heic')) return 'heic';
+  return 'bin';
+}
+function setStatus(t) { const el = $('#status'); el.textContent = t || ''; el.classList.toggle('on', !!t); }
+
+/* ---------- GitHub API ---------- */
+function gh(path, opt = {}) {
+  const headers = {
+    'Authorization': 'Bearer ' + cfg.token,
+    'Accept': opt.raw ? 'application/vnd.github.raw+json' : 'application/vnd.github+json'
+  };
+  Object.assign(headers, opt.headers || {});
+  return fetch(API + '/repos/' + cfg.repo + '/contents/' + path, {
+    method: opt.method || 'GET', body: opt.body, cache: 'no-store', headers
+  });
+}
+async function put(path, b64, message, sha) {
+  const body = {message, content: b64}; if (sha) body.sha = sha;
+  const r = await gh(path, {method: 'PUT', body: JSON.stringify(body), headers: {'Content-Type': 'application/json'}});
+  if (!r.ok) { const e = new Error(await r.text()); e.status = r.status; throw e; }
+  return r.json();
+}
+function apiError(r) {
+  if (r.status === 401) return 'التوكن غير صحيح أو انتهت صلاحيته';
+  if (r.status === 403 && r.headers.get('x-ratelimit-remaining') === '0') return 'وصلنا حد GitHub مؤقتًا، انتظري قليلًا';
+  if (r.status === 404) return 'المستودع غير موجود، أو التوكن ما عنده صلاحية عليه';
+  return 'خطأ من GitHub (' + r.status + ')';
+}
+
+/* ---------- messages: loading ---------- */
+async function fetchMsg(day, name) {
+  const r = await gh('msgs/' + day + '/' + name, {raw: true});
+  if (!r.ok) return null;
+  try { return JSON.parse(await r.text()); } catch (e) { return null; }
+}
+async function loadDay(day) {
+  const r = await gh('msgs/' + day);
+  if (r.status === 404) { S.loaded.add(day); return []; }
+  if (!r.ok) throw Object.assign(new Error(apiError(r)), {status: r.status});
+  const list = (await r.json()).filter(f => f.type === 'file' && f.name.endsWith('.json') && !S.known.has(f.name));
+  list.forEach(f => S.known.add(f.name));
+  const got = [];
+  await Promise.all(list.map(async f => {
+    const m = await fetchMsg(day, f.name);
+    if (m && m.id) got.push(m); else S.known.delete(f.name);
+  }));
+  got.forEach(addMsg);
+  S.loaded.add(day);
+  return got;
+}
+async function pollRoot() {
+  const headers = S.rootEtag ? {'If-None-Match': S.rootEtag} : {};
+  const r = await gh('msgs', {headers});
+  if (r.status === 304) return [];
+  if (r.status === 404) { await ensureInit(); return []; }
+  if (!r.ok) throw Object.assign(new Error(apiError(r)), {status: r.status});
+  S.rootEtag = r.headers.get('ETag');
+  const dirs = (await r.json()).filter(x => x.type === 'dir').sort((a, b) => a.name < b.name ? -1 : 1);
+  const newest = S.days[S.days.length - 1] || '';
+  const fresh = [];
+  for (const d of dirs) {
+    const changed = S.dirSha[d.name] !== d.sha;
+    const isNew = !S.days.includes(d.name);
+    S.dirSha[d.name] = d.sha;
+    if (isNew) S.days.push(d.name);
+    if (changed && (S.loaded.has(d.name) || (isNew && d.name >= newest))) fresh.push(...await loadDay(d.name));
+  }
+  S.days.sort();
+  return fresh;
+}
+async function ensureInit() {
+  for (const [path, content] of [['msgs/.keep', ''], ['call.json', JSON.stringify({status: 'idle'})]]) {
+    const r = await gh(path);
+    if (r.status === 404) { try { await put(path, utf8ToB64(content), 'init'); } catch (e) {} }
+  }
+}
+
+/* ---------- messages: rendering ---------- */
+function addMsg(m) {
+  const old = S.msgs.get(m.id);
+  if (old) { if (old._local && !m._local) m._local = old._local; }
+  S.msgs.set(m.id, m);
+  if (m.from !== cfg.name) { S.partner = S.partner || m.from; if (m.ts >= (S.partnerTs || 0)) { S.partner = m.from; S.partnerTs = m.ts; } }
+  placeEl(m);
+}
+function placeEl(m) {
+  const box = $('#msgs');
+  const el = msgEl(m);
+  const old = box.querySelector('.msg[data-id="' + CSS.escape(m.id) + '"]');
+  if (old) { old.replaceWith(el); return; }
+  const after = [...box.querySelectorAll('.msg')].find(k => +k.dataset.ts > m.ts);
+  box.insertBefore(el, after || null);
+  scheduleSeps();
+}
+function msgEl(m) {
+  const mine = m.from === cfg.name;
+  const el = document.createElement('div');
+  el.className = 'msg ' + (mine ? 'mine' : 'theirs') + (m._failed ? ' failed' : '');
+  el.dataset.id = m.id; el.dataset.ts = m.ts;
+  const b = document.createElement('div'); b.className = 'bubble';
+  if (m.type === 'text') {
+    b.innerHTML = linkify(esc(m.text || ''));
+  } else {
+    const holder = document.createElement('div');
+    b.appendChild(holder);
+    mountMedia(holder, m);
+    if (m.text) { const c = document.createElement('div'); c.className = 'cap'; c.innerHTML = linkify(esc(m.text)); b.appendChild(c); }
+  }
+  const meta = document.createElement('div'); meta.className = 'meta';
+  let tail = '';
+  if (mine) tail = m._failed ? ICON.warn + ' لم تُرسَل، اضغطي لإعادة المحاولة' : m._pending ? ICON.clock : ICON.check;
+  meta.innerHTML = (m.type === 'voice' && m.dur ? mmss(m.dur) + ' · ' : '') + fmtTime(m.ts) + ' ' + tail;
+  if (m._failed) meta.onclick = () => { m._failed = false; sendMsg(m, m._blob); };
+  b.appendChild(meta);
+  el.appendChild(b);
+  return el;
+}
+function mountMedia(holder, m) {
+  const make = url => {
+    let n;
+    if (m.type === 'voice') { n = document.createElement('audio'); n.controls = true; n.preload = 'metadata'; }
+    else if (m.type === 'video') { n = document.createElement('video'); n.controls = true; n.playsInline = true; n.preload = 'metadata'; }
+    else { n = document.createElement('img'); n.alt = ''; n.onclick = () => window.open(url, '_blank'); }
+    n.src = url; holder.replaceChildren(n);
+  };
+  if (m._local) { make(m._local); return; }
+  if (!m.media) { holder.innerHTML = '<div class="loading">…</div>'; return; }
+  holder.innerHTML = '<div class="loading">جارٍ التحميل…</div>';
+  mediaURL(m.media, m.mime).then(make).catch(() => {
+    holder.innerHTML = '<div class="loading">تعذَّر التحميل، اضغطي للمحاولة</div>';
+    holder.onclick = () => { holder.onclick = null; mountMedia(holder, m); };
+  });
+}
+function mediaURL(path, mime) {
+  if (S.media.has(path)) return S.media.get(path);
+  const p = (async () => {
+    const r = await gh(path, {raw: true});
+    if (!r.ok) throw new Error('media');
+    const blob = await r.blob();
+    return URL.createObjectURL(new Blob([blob], {type: mime || blob.type}));
+  })();
+  S.media.set(path, p); p.catch(() => S.media.delete(path));
+  return p;
+}
+let sepPending = false;
+function scheduleSeps() {
+  if (sepPending) return; sepPending = true;
+  requestAnimationFrame(() => {
+    sepPending = false;
+    const box = $('#msgs');
+    box.querySelectorAll('.sep,.empty').forEach(n => n.remove());
+    let last = '';
+    const today = dayOf(Date.now()), yest = dayOf(Date.now() - 864e5);
+    box.querySelectorAll('.msg').forEach(n => {
+      const d = dayOf(+n.dataset.ts);
+      if (d !== last) {
+        last = d;
+        const s = document.createElement('div'); s.className = 'sep';
+        const label = d === today ? 'اليوم' : d === yest ? 'أمس' :
+          new Date(+n.dataset.ts).toLocaleDateString('ar', {weekday: 'long', day: 'numeric', month: 'long'});
+        s.innerHTML = '<span>' + label + '</span>';
+        box.insertBefore(s, n);
+      }
+    });
+    if (!box.querySelector('.msg') && S.ready) box.innerHTML = '<div class="empty">ما في رسائل بعد 🌸<br>ابدئي المحادثة</div>';
+  });
+}
+function nearBottom() { const l = $('#list'); return l.scrollHeight - l.scrollTop - l.clientHeight < 120; }
+function toBottom() { requestAnimationFrame(() => { const l = $('#list'); l.scrollTop = l.scrollHeight; }); }
+function updateHeader() {
+  $('#hname').textContent = S.partner || 'وَصْل';
+  $('#hav').textContent = initial(S.partner || 'و');
+  $('#hsub').textContent = S.partner ? 'محادثة خاصة' : 'رسائل ومكالمات';
+}
+function updateOlder() { $('#older').classList.toggle('on', S.olderIdx > 0); }
+
+/* ---------- sending ---------- */
+async function sendMsg(m, blob) {
+  m.id = m.id || (Date.now().toString(36) + rid());
+  m.from = cfg.name; m.ts = m.ts || Date.now();
+  m._pending = true; m._failed = false;
+  addMsg(m); toBottom();
+  try {
+    if (blob && !m._mediaDone) {
+      m.media = 'media/' + dayOf(m.ts) + '/' + m.id + '.' + extOf(m.mime, m.type);
+      await put(m.media, await blobToB64(blob), 'media');
+      m._mediaDone = true;
+    }
+    const name = m.ts + '-' + m.id + '.json';
+    S.known.add(name);
+    const clean = {id: m.id, from: m.from, type: m.type, ts: m.ts};
+    if (m.text) clean.text = m.text;
+    if (m.media) { clean.media = m.media; clean.mime = m.mime; }
+    if (m.dur) clean.dur = m.dur;
+    await put('msgs/' + dayOf(m.ts) + '/' + name, utf8ToB64(JSON.stringify(clean)), 'msg');
+    m._pending = false; m._blob = null; addMsg(m);
+  } catch (e) {
+    m._pending = false; m._failed = true; m._blob = blob; addMsg(m);
+    setStatus(e.status === 401 ? 'التوكن غير صحيح أو انتهت صلاحيته' : 'ما وصلت الرسالة، تأكدي من الإنترنت');
+  }
+}
+function sendText() {
+  const t = $('#txt').value.trim();
+  if (!t) return;
+  $('#txt').value = ''; autoGrow(); updateMain();
+  sendMsg({type: 'text', text: t});
+}
+async function compressImage(file) {
+  if (file.size < 1.2e6 || /gif|heic/i.test(file.type)) return file;
+  try {
+    const bmp = await createImageBitmap(file);
+    const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    const out = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.82));
+    return out && out.size < file.size ? out : file;
+  } catch (e) { return file; }
+}
+async function onFile(file) {
+  if (!file) return;
+  const isVideo = file.type.startsWith('video/');
+  const blob = isVideo ? file : await compressImage(file);
+  if (blob.size > MAX_MB * 1048576) { setStatus('الملف أكبر من ' + MAX_MB + ' ميجا'); return; }
+  const caption = $('#txt').value.trim(); $('#txt').value = ''; autoGrow(); updateMain();
+  const mime = blob.type || file.type || 'application/octet-stream';
+  sendMsg({type: isVideo ? 'video' : 'image', mime, text: caption, _local: URL.createObjectURL(blob)}, blob);
+}
+
+/* ---------- voice recording ---------- */
+let rec = null;
+async function startRec() {
+  unlockAudio();
+  if (!window.MediaRecorder) { setStatus('جهازك ما يدعم التسجيل الصوتي'); return; }
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({audio: true}); }
+  catch (e) { setStatus('اسمحي للموقع باستخدام المايك'); return; }
+  const types = ['audio/mp4;codecs=mp4a.40.2', 'audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'];
+  const mime = types.find(t => MediaRecorder.isTypeSupported(t)) || '';
+  const mr = new MediaRecorder(stream, mime ? {mimeType: mime} : undefined);
+  const r = rec = {mr, stream, chunks: [], t0: Date.now(), cancel: false};
+  mr.ondataavailable = e => { if (e.data && e.data.size) r.chunks.push(e.data); };
+  mr.onstop = () => {
+    stream.getTracks().forEach(t => t.stop());
+    clearInterval(r.tick); rec = null; showRec(false);
+    if (r.cancel) return;
+    const type = (mr.mimeType || mime || 'audio/webm').split(';')[0];
+    const blob = new Blob(r.chunks, {type});
+    const dur = Math.max(1, Math.round((Date.now() - r.t0) / 1000));
+    if (blob.size < 800) return;
+    if (blob.size > MAX_MB * 1048576) { setStatus('التسجيل طويل جدًّا'); return; }
+    sendMsg({type: 'voice', mime: type, dur, _local: URL.createObjectURL(blob)}, blob);
+  };
+  mr.start(250);
+  showRec(true);
+  $('#recT').textContent = '0:00';
+  r.tick = setInterval(() => { $('#recT').textContent = mmss((Date.now() - r.t0) / 1000); }, 300);
+}
+function stopRec(cancel) { if (!rec) return; rec.cancel = cancel; try { rec.mr.stop(); } catch (e) { showRec(false); rec = null; } }
+function showRec(on) { $('#rec').classList.toggle('on', on); $('#composer').style.display = on ? 'none' : ''; }
+
+/* ---------- polling ---------- */
+async function poll() {
+  if (S.polling) return;
+  S.polling = true; clearTimeout(S.timer);
+  if (cfg) {
+    try {
+      const wasBottom = nearBottom();
+      const fresh = await pollRoot();
+      await pollCall();
+      onFresh(fresh, wasBottom);
+      S.failCount = 0; setStatus('');
+    } catch (e) {
+      S.failCount++;
+      if (e.status === 401) { setStatus('التوكن غير صحيح أو انتهت صلاحيته'); openSetup(); }
+      else if (S.failCount > 1) setStatus(e.status ? e.message : 'غير متصلة، أحاول مرة ثانية…');
+    }
+  }
+  S.polling = false;
+  const delay = S.fast ? 1500 : document.hidden ? 10000 : 3000;
+  S.timer = setTimeout(poll, delay);
+}
+function kick() { if (!S.polling) poll(); }
+function onFresh(fresh, wasBottom) {
+  const others = fresh.filter(m => m.from !== cfg.name).sort((a, b) => a.ts - b.ts);
+  updateHeader();
+  if (!fresh.length) return;
+  if (wasBottom) toBottom();
+  if (!others.length || !S.ready) return;
+  if (document.hidden || !wasBottom) { S.unread += others.length; updateTitle(); }
+  const last = others[others.length - 1];
+  const body = last.type === 'text' ? last.text : last.type === 'voice' ? 'رسالة صوتية 🎤' : last.type === 'video' ? 'مقطع فيديو' : 'صورة';
+  if (document.hidden) notify(last.from, body, 'msg');
+  else beep(880, 0.08);
+}
+function updateTitle() { document.title = S.unread ? '(' + S.unread + ') وَصْل' : 'وَصْل'; }
+
+/* ---------- notifications & sounds ---------- */
+let actx = null;
+function unlockAudio() {
+  try { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume(); } catch (e) {}
+}
+function beep(freq, len, when = 0) {
+  if (!actx) return;
+  try {
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.frequency.value = freq; o.type = 'sine';
+    g.gain.setValueAtTime(0.0001, actx.currentTime + when);
+    g.gain.exponentialRampToValueAtTime(0.25, actx.currentTime + when + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + when + len);
+    o.connect(g).connect(actx.destination); o.start(actx.currentTime + when); o.stop(actx.currentTime + when + len + 0.05);
+  } catch (e) {}
+}
+let ringT = null;
+function startRing() {
+  stopRing();
+  const once = () => { beep(660, 0.35); beep(880, 0.35, 0.45); if (navigator.vibrate) navigator.vibrate([400, 200, 400]); };
+  once(); ringT = setInterval(once, 2200);
+}
+function stopRing() { clearInterval(ringT); ringT = null; if (navigator.vibrate) navigator.vibrate(0); }
+async function notify(title, body, tag) {
+  try {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
+    const opt = {body, tag, icon: 'icon-192.png', badge: 'icon-192.png', renotify: true};
+    if (reg) reg.showNotification(title, opt); else new Notification(title, opt);
+  } catch (e) {}
+}
+
+/* ---------- calls (WebRTC, signaling via call.json) ---------- */
+async function pollCall() {
+  const headers = S.callEtag ? {'If-None-Match': S.callEtag} : {};
+  const r = await gh('call.json', {headers});
+  if (r.status === 304) return;
+  if (r.status === 404) { S.callSha = null; S.callEtag = null; return; }
+  if (!r.ok) return;
+  S.callEtag = r.headers.get('ETag');
+  const j = await r.json();
+  S.callSha = j.sha;
+  let st; try { st = JSON.parse(b64ToUtf8(j.content)); } catch (e) { return; }
+  S.callState = st;
+  handleCall(st);
+}
+async function refreshCallSha() {
+  const r = await gh('call.json');
+  if (r.ok) { const j = await r.json(); S.callSha = j.sha; } else S.callSha = null;
+  S.callEtag = null;
+}
+async function writeCall(st) {
+  for (let i = 0; i < 3; i++) {
+    try {
+      const res = await put('call.json', utf8ToB64(JSON.stringify(st)), 'call', S.callSha || undefined);
+      S.callSha = res.content.sha; S.callEtag = null; S.callState = st;
+      return;
+    } catch (e) {
+      if (e.status === 409 || e.status === 422) { await refreshCallSha(); continue; }
+      throw e;
+    }
+  }
+  throw new Error('call write failed');
+}
+function handleCall(st) {
+  if (!st || !st.id) return;
+  if (call && st.id === call.id) {
+    if (call.role === 'caller' && st.status === 'answered' && st.answer && !call.remoteSet) {
+      call.remoteSet = true; clearTimeout(call.ringTimer);
+      setCallText('جارٍ الاتصال…');
+      call.pc.setRemoteDescription({type: 'answer', sdp: st.answer}).catch(() => hangup('تعذَّر الاتصال'));
+    }
+    if (st.status === 'declined') endCall('مشغولة الآن');
+    else if (st.status === 'ended') endCall('انتهت المكالمة');
+    return;
+  }
+  if (S.incoming && S.incoming.id === st.id && st.status !== 'ringing') {
+    S.handled.add(st.id); hideIncoming(); notify(st.from, 'مكالمة فائتة', 'call'); return;
+  }
+  const fresh = Math.abs(Date.now() - st.ts) < 90000;
+  if (!call && !S.incoming && st.status === 'ringing' && st.from !== cfg.name && fresh && !S.handled.has(st.id)) showIncoming(st);
+}
+function newPC() {
+  const iceServers = [{urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302']}];
+  if (cfg.turnUrl) iceServers.push({urls: cfg.turnUrl.split(',').map(s => s.trim()).filter(Boolean), username: cfg.turnUser || '', credential: cfg.turnPass || ''});
+  const pc = new RTCPeerConnection({iceServers});
+  pc.ontrack = e => {
+    const v = $('#remoteV'); const s = e.streams[0] || new MediaStream([e.track]);
+    if (v.srcObject !== s) { v.srcObject = s; v.play().catch(() => {}); }
+  };
+  pc.onconnectionstatechange = () => {
+    if (!call || call.pc !== pc) return;
+    const s = pc.connectionState;
+    if (s === 'connected') onConnected();
+    else if (s === 'disconnected') setCallText('الاتصال ضعيف…');
+    else if (s === 'failed') hangup('تعذَّر الاتصال، جرِّبي شبكة Wi-Fi');
+  };
+  return pc;
+}
+function iceDone(pc) {
+  return new Promise(res => {
+    if (pc.iceGatheringState === 'complete') return res();
+    const t = setTimeout(res, 4000);
+    pc.addEventListener('icegatheringstatechange', () => { if (pc.iceGatheringState === 'complete') { clearTimeout(t); res(); } });
+  });
+}
+function getMedia(video) {
+  return navigator.mediaDevices.getUserMedia({
+    audio: {echoCancellation: true, noiseSuppression: true},
+    video: video ? {facingMode: 'user', width: {ideal: 640}, height: {ideal: 480}} : false
+  });
+}
+function showCallUI(video, name, text) {
+  const ui = $('#callUI');
+  ui.className = 'on ' + (video ? 'video' : 'audioOnly');
+  $('#cName').textContent = name || 'صديقتي'; $('#cAv').textContent = initial(name);
+  $('#cCam').style.display = video ? '' : 'none';
+  $('#cMute').classList.remove('off'); $('#cCam').classList.remove('off');
+  if (call && call.stream && video) { $('#localV').srcObject = call.stream; $('#localV').play().catch(() => {}); }
+  setCallText(text);
+}
+function setCallText(t) { $('#cText').textContent = t || ''; }
+function hideCallUI() { $('#callUI').className = ''; }
+async function startCall(video) {
+  if (call) return;
+  if (!window.RTCPeerConnection) { setStatus('جهازك ما يدعم المكالمات'); return; }
+  unlockAudio();
+  let stream;
+  try { stream = await getMedia(video); } catch (e) { setStatus('اسمحي للموقع باستخدام المايك' + (video ? ' والكاميرا' : '')); return; }
+  const c = call = {id: Date.now().toString(36) + rid(), role: 'caller', video, stream};
+  showCallUI(video, S.partner, 'جارٍ تجهيز المكالمة…');
+  try {
+    const pc = c.pc = newPC();
+    stream.getTracks().forEach(t => pc.addTrack(t, stream));
+    await pc.setLocalDescription(await pc.createOffer());
+    await iceDone(pc);
+    if (call !== c) return;
+    await writeCall({id: c.id, from: cfg.name, video, status: 'ringing', offer: pc.localDescription.sdp, ts: Date.now()});
+    if (call !== c) return;
+    setCallText('يرن…'); S.fast = true; kick();
+    c.ringTimer = setTimeout(() => { if (call === c && !c.remoteSet) hangup('ما ردَّت'); }, 45000);
+  } catch (e) { if (call === c) endCall('تعذَّر بدء المكالمة'); }
+}
+function showIncoming(st) {
+  S.incoming = st;
+  $('#inName').textContent = st.from; $('#inAv').textContent = initial(st.from);
+  $('#inType').textContent = st.video ? 'مكالمة فيديو واردة' : 'مكالمة صوتية واردة';
+  $('#incoming').classList.add('on');
+  startRing(); S.fast = true;
+  if (document.hidden) notify(st.from, st.video ? 'مكالمة فيديو واردة' : 'مكالمة صوتية واردة', 'call');
+}
+function hideIncoming() { S.incoming = null; $('#incoming').classList.remove('on'); stopRing(); if (!call) S.fast = false; }
+async function acceptCall() {
+  const st = S.incoming; if (!st) return;
+  S.handled.add(st.id); hideIncoming(); unlockAudio();
+  let stream;
+  try { stream = await getMedia(st.video); }
+  catch (e) { setStatus('اسمحي للموقع باستخدام المايك'); try { await writeCall(Object.assign({}, st, {status: 'declined'})); } catch (x) {} return; }
+  const c = call = {id: st.id, role: 'callee', video: st.video, stream, remoteSet: true};
+  showCallUI(st.video, st.from, 'جارٍ الاتصال…');
+  try {
+    const pc = c.pc = newPC();
+    stream.getTracks().forEach(t => pc.addTrack(t, stream));
+    await pc.setRemoteDescription({type: 'offer', sdp: st.offer});
+    await pc.setLocalDescription(await pc.createAnswer());
+    await iceDone(pc);
+    if (call !== c) return;
+    await writeCall(Object.assign({}, st, {status: 'answered', answer: pc.localDescription.sdp}));
+    S.fast = true;
+  } catch (e) { if (call === c) hangup('تعذَّر الرد'); }
+}
+async function declineCall() {
+  const st = S.incoming; if (!st) return;
+  S.handled.add(st.id); hideIncoming();
+  try { await writeCall(Object.assign({}, st, {status: 'declined'})); } catch (e) {}
+}
+function onConnected() {
+  if (!call || call.t0) return;
+  call.t0 = Date.now(); S.fast = false; setCallText('0:00');
+  call.tick = setInterval(() => { if (call) setCallText(mmss((Date.now() - call.t0) / 1000)); }, 1000);
+}
+async function hangup(text) {
+  const c = call; if (!c) return;
+  endCall(text);
+  const base = S.callState && S.callState.id === c.id ? S.callState : {id: c.id, from: cfg.name, ts: Date.now()};
+  try { await writeCall({id: base.id, from: base.from, video: base.video, ts: base.ts, status: 'ended'}); } catch (e) {}
+}
+function endCall(text) {
+  if (!call) return;
+  const c = call; call = null; S.fast = false;
+  clearTimeout(c.ringTimer); clearInterval(c.tick);
+  try { c.pc && c.pc.close(); } catch (e) {}
+  if (c.stream) c.stream.getTracks().forEach(t => t.stop());
+  $('#remoteV').srcObject = null; $('#localV').srcObject = null;
+  if (text) { setCallText(text); setTimeout(() => { if (!call) hideCallUI(); }, 1800); } else hideCallUI();
+}
+function toggleTrack(kind, btn) {
+  if (!call || !call.stream) return;
+  const tracks = kind === 'audio' ? call.stream.getAudioTracks() : call.stream.getVideoTracks();
+  const on = !(tracks[0] && tracks[0].enabled);
+  tracks.forEach(t => { t.enabled = on; });
+  btn.classList.toggle('off', !on);
+}
+
+/* ---------- setup ---------- */
+function openSetup() {
+  const c = cfg || {};
+  $('#sName').value = c.name || ''; $('#sRepo').value = c.repo || ''; $('#sToken').value = c.token || '';
+  $('#sTurn').value = c.turnUrl || ''; $('#sTurnU').value = c.turnUser || ''; $('#sTurnP').value = c.turnPass || '';
+  $('#sErr').textContent = '';
+  $('#sClose').style.display = cfg ? '' : 'none';
+  $('#setup').classList.add('on');
+}
+async function saveSetup() {
+  const name = $('#sName').value.trim();
+  const repo = $('#sRepo').value.trim().replace(/^https?:\/\/github\.com\//, '').replace(/\.git$/, '').replace(/\/$/, '');
+  const token = $('#sToken').value.trim();
+  const err = $('#sErr');
+  if (!name || !repo || !token) { err.textContent = 'اكتبي الاسم والمستودع والتوكن'; return; }
+  if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) { err.textContent = 'اكتبي المستودع هكذا: اسم-الحساب/اسم-المستودع'; return; }
+  err.textContent = 'أتحقق…';
+  try {
+    const r = await fetch(API + '/repos/' + repo, {cache: 'no-store', headers: {'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json'}});
+    if (!r.ok) { err.textContent = apiError(r); return; }
+    const info = await r.json();
+    if (!info.private && !confirm('تنبيه: هذا المستودع عام، وأي أحد يقدر يقرأ رسائلكما. متأكدة؟')) { err.textContent = 'اجعلي المستودع خاصًّا (Private)'; return; }
+  } catch (e) { err.textContent = 'تعذَّر الاتصال بـ GitHub'; return; }
+  const changed = !cfg || cfg.repo !== repo || cfg.name !== name;
+  cfg = {name, repo, token, turnUrl: $('#sTurn').value.trim(), turnUser: $('#sTurnU').value.trim(), turnPass: $('#sTurnP').value};
+  saveCfg();
+  $('#setup').classList.remove('on');
+  try { await ensureInit(); } catch (e) {}
+  if (changed) boot(); else kick();
+}
+async function askNotif() {
+  if (!('Notification' in window)) { $('#sErr').textContent = 'جهازك ما يدعم الإشعارات هنا. على الآيفون: أضيفي الموقع للشاشة الرئيسية أولًا'; return; }
+  const p = await Notification.requestPermission();
+  $('#sErr').textContent = p === 'granted' ? 'تفعَّلت الإشعارات 🌸 (تشتغل والتطبيق مفتوح أو بالخلفية)' : 'ما تفعَّلت الإشعارات';
+}
+
+/* ---------- composer UI ---------- */
+function autoGrow() { const t = $('#txt'); t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 120) + 'px'; }
+function updateMain() {
+  const has = $('#txt').value.trim().length > 0;
+  $('#bMain').innerHTML = has ? ICON.send : ICON.mic;
+  $('#bMain').title = has ? 'إرسال' : 'تسجيل صوتي';
+}
+$('#txt').addEventListener('input', () => { autoGrow(); updateMain(); });
+$('#bMain').onclick = () => { unlockAudio(); if ($('#txt').value.trim()) sendText(); else startRec(); };
+$('#bRecSend').onclick = () => stopRec(false);
+$('#bRecX').onclick = () => stopRec(true);
+$('#bAttach').onclick = () => $('#file').click();
+$('#file').onchange = e => { const f = e.target.files[0]; e.target.value = ''; onFile(f); };
+$('#bAudio').onclick = () => startCall(false);
+$('#bVideo').onclick = () => startCall(true);
+$('#bSet').onclick = openSetup;
+$('#sSave').onclick = saveSetup;
+$('#sClose').onclick = () => $('#setup').classList.remove('on');
+$('#sNotif').onclick = askNotif;
+$('#inOk').onclick = acceptCall;
+$('#inNo').onclick = declineCall;
+$('#cEnd').onclick = () => hangup();
+$('#cMute').onclick = e => toggleTrack('audio', e.currentTarget);
+$('#cCam').onclick = e => toggleTrack('video', e.currentTarget);
+$('#older').onclick = async () => {
+  if (S.olderIdx <= 0) return;
+  const l = $('#list'); const h0 = l.scrollHeight;
+  $('#older').textContent = 'جارٍ التحميل…';
+  try {
+    let got = [];
+    while (S.olderIdx > 0 && !got.length) { S.olderIdx--; got = await loadDay(S.days[S.olderIdx]); }
+  } catch (e) { setStatus('تعذَّر تحميل الرسائل الأقدم'); }
+  $('#older').textContent = 'رسائل أقدم'; updateOlder();
+  requestAnimationFrame(() => { l.scrollTop += l.scrollHeight - h0; });
+};
+$('#list').addEventListener('scroll', () => { if (S.unread && nearBottom()) { S.unread = 0; updateTitle(); } });
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) { if (nearBottom()) { S.unread = 0; updateTitle(); } kick(); }
+});
+document.addEventListener('pointerdown', unlockAudio, {once: true});
+
+/* ---------- boot ---------- */
+async function boot() {
+  clearTimeout(S.timer);
+  Object.assign(S, {msgs: new Map(), known: new Set(), dirSha: {}, days: [], loaded: new Set(), olderIdx: 0, rootEtag: null, partner: '', partnerTs: 0, unread: 0, ready: false, callEtag: null});
+  $('#msgs').innerHTML = '<div class="empty">جارٍ التحميل… 🌧</div>';
+  updateHeader(); updateMain();
+  if (!cfg) { $('#msgs').innerHTML = ''; openSetup(); return; }
+  try {
+    const r = await gh('msgs');
+    if (r.status === 404) { await ensureInit(); }
+    else if (!r.ok) throw Object.assign(new Error(apiError(r)), {status: r.status});
+    else {
+      S.rootEtag = r.headers.get('ETag');
+      const dirs = (await r.json()).filter(x => x.type === 'dir').sort((a, b) => a.name < b.name ? -1 : 1);
+      dirs.forEach(d => { S.dirSha[d.name] = d.sha; S.days.push(d.name); });
+    }
+    $('#msgs').innerHTML = '';
+    const recent = S.days.slice(-3);
+    S.olderIdx = S.days.length - recent.length;
+    for (const d of recent) await loadDay(d);
+    // call.json: remember current state so old calls don't ring
+    try {
+      const c = await gh('call.json');
+      if (c.ok) { const j = await c.json(); S.callSha = j.sha; S.callEtag = c.headers.get('ETag'); try { const st = JSON.parse(b64ToUtf8(j.content)); S.callState = st; if (st.id && st.status !== 'ringing') S.handled.add(st.id); else handleCall(st); } catch (e) {} }
+    } catch (e) {}
+  } catch (e) {
+    $('#msgs').innerHTML = '';
+    setStatus(e.message || 'تعذَّر الاتصال');
+    if (e.status === 401 || e.status === 404) openSetup();
+  }
+  S.ready = true; scheduleSeps(); updateOlder(); updateHeader(); toBottom();
+  poll();
+}
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+boot();
+</script>
+</body>
+</html>
