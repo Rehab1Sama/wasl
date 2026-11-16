@@ -45,6 +45,8 @@ main{flex:1;overflow-y:auto;padding:10px 10px 4px;
 .bubble a{color:var(--sage-dk)}
 .meta{display:flex;gap:4px;align-items:center;justify-content:flex-end;font-size:11px;color:var(--muted);margin-top:2px}
 .meta svg{width:13px;height:13px}
+.meta .tick{display:inline-flex}
+.meta .tick.seen{color:#3d9be0}
 .failed .meta{color:#b5523f;cursor:pointer}
 .bubble audio{width:240px;max-width:100%;height:40px;display:block}
 .bubble video,.bubble img{display:block;max-width:100%;max-height:340px;border-radius:10px;background:#0001}
@@ -140,7 +142,7 @@ textarea{flex:1;border:0;outline:0;resize:none;background:none;font:inherit;font
     <input id="sToken" type="password" placeholder="github_pat_…" autocapitalize="off" autocorrect="off" spellcheck="false">
     <details>
       <summary>إعدادات المكالمات (اختياري)</summary>
-      <p style="margin-top:8px">إذا ما اشتغلت المكالمات على بيانات الجوال، أضيفي هنا خادم TURN.</p>
+      <p style="margin-top:8px">إذا ما اشتغلت المكالمات، أضيفي خادم TURN مجاني (مثلًا من expressturn.com). يكفي تضيفينه مرة وحدة، ويوصل لصديقتك تلقائيًا.</p>
       <label for="sTurn">TURN URL</label>
       <input id="sTurn" placeholder="turn:example.com:3478">
       <label for="sTurnU">Username</label>
@@ -194,6 +196,7 @@ const ICON = {
   send:'<svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>',
   clock:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
   check:'<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>',
+  check2:'<svg viewBox="0 0 28 24" style="width:17px"><path d="M18 6 7 17l-5-5M26 6 15 17l-1.5-1.5"/></svg>',
   warn:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>'
 };
 
@@ -205,7 +208,8 @@ const S = {
   msgs: new Map(), known: new Set(), dirSha: {}, days: [], loaded: new Set(), olderIdx: 0,
   rootEtag: null, media: new Map(), partner: '', unread: 0, ready: false,
   callEtag: null, callSha: null, callState: null, handled: new Set(), incoming: null,
-  timer: null, polling: false, fast: false, failCount: 0
+  timer: null, polling: false, fast: false, failCount: 0,
+  seenEtag: null, seenSha: {}, seenOther: 0, mySeenTs: 0, mySeenSha: null, turn: null, cfgSha: null
 };
 let call = null;
 
@@ -314,6 +318,76 @@ async function pollRoot() {
   S.days.sort();
   return fresh;
 }
+function userKey(n) { return Array.from(new TextEncoder().encode(n || '')).map(b => b.toString(16).padStart(2, '0')).join(''); }
+function tickHTML(m) {
+  const seen = m.ts <= S.seenOther;
+  return '<span class="tick' + (seen ? ' seen' : '') + '" title="' + (seen ? 'شافتها' : 'وصلت') + '">' + (seen ? ICON.check2 : ICON.check) + '</span>';
+}
+function refreshTicks() {
+  document.querySelectorAll('.msg.mine').forEach(el => {
+    const m = S.msgs.get(el.dataset.id); if (!m || m._pending || m._failed) return;
+    const t = el.querySelector('.tick'); if (!t) return;
+    const want = m.ts <= S.seenOther;
+    if (want !== t.classList.contains('seen')) t.outerHTML = tickHTML(m);
+  });
+}
+async function pollSeen() {
+  const headers = S.seenEtag ? {'If-None-Match': S.seenEtag} : {};
+  const r = await gh('seen', {headers});
+  if (r.status === 304) return;
+  if (r.status === 404) { try { await put('seen/.keep', '', 'init'); } catch (e) {} return; }
+  if (!r.ok) return;
+  S.seenEtag = r.headers.get('ETag');
+  const me = userKey(cfg.name) + '.json';
+  for (const f of await r.json()) {
+    if (f.type !== 'file' || !f.name.endsWith('.json')) continue;
+    if (f.name === me) { S.mySeenSha = f.sha; continue; }
+    if (S.seenSha[f.name] === f.sha) continue;
+    const x = await gh('seen/' + f.name, {raw: true});
+    if (!x.ok) continue;
+    try { const j = JSON.parse(await x.text()); S.seenSha[f.name] = f.sha; if (j.ts > S.seenOther) S.seenOther = j.ts; } catch (e) {}
+  }
+  refreshTicks();
+}
+let seenBusy = false;
+async function markSeen() {
+  if (seenBusy || !cfg || !S.ready || document.hidden || !nearBottom()) return;
+  let last = 0;
+  S.msgs.forEach(m => { if (m.from !== cfg.name && m.ts > last) last = m.ts; });
+  if (last <= S.mySeenTs) return;
+  seenBusy = true;
+  const path = 'seen/' + userKey(cfg.name) + '.json';
+  const body = utf8ToB64(JSON.stringify({name: cfg.name, ts: last}));
+  try {
+    try { const res = await put(path, body, 'seen', S.mySeenSha || undefined); S.mySeenSha = res.content.sha; }
+    catch (e) {
+      if (e.status !== 409 && e.status !== 422) throw e;
+      const g = await gh(path); S.mySeenSha = g.ok ? (await g.json()).sha : null;
+      const res = await put(path, body, 'seen', S.mySeenSha || undefined); S.mySeenSha = res.content.sha;
+    }
+    S.mySeenTs = last;
+  } catch (e) {}
+  seenBusy = false;
+}
+async function loadSharedConfig() {
+  try {
+    const r = await gh('config.json');
+    if (!r.ok) return;
+    const j = await r.json(); S.cfgSha = j.sha;
+    S.turn = JSON.parse(b64ToUtf8(j.content));
+  } catch (e) {}
+}
+async function saveSharedConfig(turn) {
+  try {
+    if (!S.cfgSha) { const r = await gh('config.json'); if (r.ok) S.cfgSha = (await r.json()).sha; }
+    const res = await put('config.json', utf8ToB64(JSON.stringify(turn)), 'config', S.cfgSha || undefined);
+    S.cfgSha = res.content.sha; S.turn = turn;
+  } catch (e) {}
+}
+function turnConf() {
+  const t = (cfg && cfg.turnUrl) ? {turnUrl: cfg.turnUrl, turnUser: cfg.turnUser, turnPass: cfg.turnPass} : S.turn;
+  return t && t.turnUrl ? t : null;
+}
 async function ensureInit() {
   for (const [path, content] of [['msgs/.keep', ''], ['call.json', JSON.stringify({status: 'idle'})]]) {
     const r = await gh(path);
@@ -354,7 +428,7 @@ function msgEl(m) {
   }
   const meta = document.createElement('div'); meta.className = 'meta';
   let tail = '';
-  if (mine) tail = m._failed ? ICON.warn + ' لم تُرسَل، اضغطي لإعادة المحاولة' : m._pending ? ICON.clock : ICON.check;
+  if (mine) tail = m._failed ? ICON.warn + ' لم تُرسَل، اضغطي لإعادة المحاولة' : m._pending ? ICON.clock : tickHTML(m);
   meta.innerHTML = (m.type === 'voice' && m.dur ? mmss(m.dur) + ' · ' : '') + fmtTime(m.ts) + ' ' + tail;
   if (m._failed) meta.onclick = () => { m._failed = false; sendMsg(m, m._blob); };
   b.appendChild(meta);
@@ -514,7 +588,9 @@ async function poll() {
       const wasBottom = nearBottom();
       const fresh = await pollRoot();
       await pollCall();
+      await pollSeen();
       onFresh(fresh, wasBottom);
+      markSeen();
       S.failCount = 0; setStatus('');
     } catch (e) {
       S.failCount++;
@@ -612,6 +688,7 @@ function handleCall(st) {
       call.remoteSet = true; clearTimeout(call.ringTimer);
       setCallText('جارٍ الاتصال…');
       call.pc.setRemoteDescription({type: 'answer', sdp: st.answer}).catch(() => hangup('تعذَّر الاتصال'));
+      armConnectTimeout(call);
     }
     if (st.status === 'declined') endCall('مشغولة الآن');
     else if (st.status === 'ended') endCall('انتهت المكالمة');
@@ -625,7 +702,8 @@ function handleCall(st) {
 }
 function newPC() {
   const iceServers = [{urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302']}];
-  if (cfg.turnUrl) iceServers.push({urls: cfg.turnUrl.split(',').map(s => s.trim()).filter(Boolean), username: cfg.turnUser || '', credential: cfg.turnPass || ''});
+  const t = turnConf();
+  if (t) iceServers.push({urls: t.turnUrl.split(',').map(s => s.trim()).filter(Boolean), username: t.turnUser || '', credential: t.turnPass || ''});
   const pc = new RTCPeerConnection({iceServers});
   pc.ontrack = e => {
     const v = $('#remoteV'); const s = e.streams[0] || new MediaStream([e.track]);
@@ -636,7 +714,13 @@ function newPC() {
     const s = pc.connectionState;
     if (s === 'connected') onConnected();
     else if (s === 'disconnected') setCallText('الاتصال ضعيف…');
-    else if (s === 'failed') hangup('تعذَّر الاتصال، جرِّبي شبكة Wi-Fi');
+    else if (s === 'failed') hangup(turnConf() ? 'تعذَّر الاتصال، جرِّبي مرة ثانية' : 'تعذَّر الاتصال: أضيفي خادم TURN من الإعدادات');
+  };
+  pc.oniceconnectionstatechange = () => {
+    if (!call || call.pc !== pc) return;
+    const s = pc.iceConnectionState;
+    if (s === 'connected' || s === 'completed') onConnected();
+    else if (s === 'failed') hangup(turnConf() ? 'تعذَّر الاتصال، جرِّبي مرة ثانية' : 'تعذَّر الاتصال: أضيفي خادم TURN من الإعدادات');
   };
   return pc;
 }
@@ -709,13 +793,19 @@ async function acceptCall() {
     await iceDone(pc);
     if (call !== c) return;
     await writeCall(Object.assign({}, st, {status: 'answered', answer: pc.localDescription.sdp}));
-    S.fast = true;
+    S.fast = true; armConnectTimeout(c);
   } catch (e) { if (call === c) hangup('تعذَّر الرد'); }
 }
 async function declineCall() {
   const st = S.incoming; if (!st) return;
   S.handled.add(st.id); hideIncoming();
   try { await writeCall(Object.assign({}, st, {status: 'declined'})); } catch (e) {}
+}
+function armConnectTimeout(c) {
+  clearTimeout(c.connTimer);
+  c.connTimer = setTimeout(() => {
+    if (call === c && !c.t0) hangup(turnConf() ? 'ما قدرنا نوصل، جرِّبي مرة ثانية' : 'ما قدرنا نوصل: الشبكة تحتاج خادم TURN (من الإعدادات ⚙️)');
+  }, 25000);
 }
 function onConnected() {
   if (!call || call.t0) return;
@@ -731,7 +821,7 @@ async function hangup(text) {
 function endCall(text) {
   if (!call) return;
   const c = call; call = null; S.fast = false;
-  clearTimeout(c.ringTimer); clearInterval(c.tick);
+  clearTimeout(c.ringTimer); clearTimeout(c.connTimer); clearInterval(c.tick);
   try { c.pc && c.pc.close(); } catch (e) {}
   if (c.stream) c.stream.getTracks().forEach(t => t.stop());
   $('#remoteV').srcObject = null; $('#localV').srcObject = null;
@@ -749,7 +839,8 @@ function toggleTrack(kind, btn) {
 function openSetup() {
   const c = cfg || {};
   $('#sName').value = c.name || ''; $('#sRepo').value = c.repo || ''; $('#sToken').value = c.token || '';
-  $('#sTurn').value = c.turnUrl || ''; $('#sTurnU').value = c.turnUser || ''; $('#sTurnP').value = c.turnPass || '';
+  const t = turnConf() || {};
+  $('#sTurn').value = t.turnUrl || ''; $('#sTurnU').value = t.turnUser || ''; $('#sTurnP').value = t.turnPass || '';
   $('#sErr').textContent = '';
   $('#sClose').style.display = cfg ? '' : 'none';
   $('#setup').classList.add('on');
@@ -769,10 +860,15 @@ async function saveSetup() {
     if (!info.private && !confirm('تنبيه: هذا المستودع عام، وأي أحد يقدر يقرأ رسائلكما. متأكدة؟')) { err.textContent = 'اجعلي المستودع خاصًّا (Private)'; return; }
   } catch (e) { err.textContent = 'تعذَّر الاتصال بـ GitHub'; return; }
   const changed = !cfg || cfg.repo !== repo || cfg.name !== name;
-  cfg = {name, repo, token, turnUrl: $('#sTurn').value.trim(), turnUser: $('#sTurnU').value.trim(), turnPass: $('#sTurnP').value};
+  const turn = {turnUrl: $('#sTurn').value.trim(), turnUser: $('#sTurnU').value.trim(), turnPass: $('#sTurnP').value};
+  cfg = {name, repo, token};
   saveCfg();
   $('#setup').classList.remove('on');
   try { await ensureInit(); } catch (e) {}
+  if (!changed || S.turn || turn.turnUrl) {
+    const prev = S.turn || {};
+    if (turn.turnUrl !== (prev.turnUrl || '') || turn.turnUser !== (prev.turnUser || '') || turn.turnPass !== (prev.turnPass || '')) await saveSharedConfig(turn);
+  }
   if (changed) boot(); else kick();
 }
 async function askNotif() {
@@ -816,7 +912,7 @@ $('#older').onclick = async () => {
   $('#older').textContent = 'رسائل أقدم'; updateOlder();
   requestAnimationFrame(() => { l.scrollTop += l.scrollHeight - h0; });
 };
-$('#list').addEventListener('scroll', () => { if (S.unread && nearBottom()) { S.unread = 0; updateTitle(); } });
+$('#list').addEventListener('scroll', () => { if (nearBottom()) { if (S.unread) { S.unread = 0; updateTitle(); } markSeen(); } });
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) { if (nearBottom()) { S.unread = 0; updateTitle(); } kick(); }
 });
@@ -825,10 +921,11 @@ document.addEventListener('pointerdown', unlockAudio, {once: true});
 /* ---------- boot ---------- */
 async function boot() {
   clearTimeout(S.timer);
-  Object.assign(S, {msgs: new Map(), known: new Set(), dirSha: {}, days: [], loaded: new Set(), olderIdx: 0, rootEtag: null, partner: '', partnerTs: 0, unread: 0, ready: false, callEtag: null});
+  Object.assign(S, {msgs: new Map(), known: new Set(), dirSha: {}, days: [], loaded: new Set(), olderIdx: 0, rootEtag: null, partner: '', partnerTs: 0, unread: 0, ready: false, callEtag: null, seenEtag: null, seenSha: {}, seenOther: 0, mySeenTs: 0, mySeenSha: null});
   $('#msgs').innerHTML = '<div class="empty">جارٍ التحميل… 🌧</div>';
   updateHeader(); updateMain();
   if (!cfg) { $('#msgs').innerHTML = ''; openSetup(); return; }
+  loadSharedConfig();
   try {
     const r = await gh('msgs');
     if (r.status === 404) { await ensureInit(); }
