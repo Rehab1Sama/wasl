@@ -158,7 +158,7 @@ textarea{flex:1;border:0;outline:0;resize:none;background:none;font:inherit;font
     <div class="row">
       <button class="btn ghost" id="sNotif">تفعيل الإشعارات</button>
     </div>
-    <p style="text-align:center;margin:14px 0 0;font-size:12px">الإصدار 3</p>
+    <p style="text-align:center;margin:14px 0 0;font-size:12px">الإصدار 4</p>
   </div>
 </div>
 
@@ -691,7 +691,8 @@ function handleCall(st) {
       call.pc.setRemoteDescription({type: 'answer', sdp: st.answer}).catch(() => hangup('تعذَّر الاتصال'));
       armConnectTimeout(call);
     }
-    if (st.status === 'declined') endCall('مشغولة الآن');
+    if (st.status === 'declined') endCall('رفضت المكالمة');
+    else if (st.status === 'failed') endCall(st.reason === 'mic' ? 'ما انفتح المايك عندها، تسمح للموقع بالمايك وتعيدون' : 'تعذَّر الاتصال');
     else if (st.status === 'ended') endCall('انتهت المكالمة');
     return;
   }
@@ -774,7 +775,9 @@ async function startCall(video) {
     await writeCall({id: c.id, from: cfg.name, video, status: 'ringing', offer: pc.localDescription.sdp, ts: Date.now()});
     if (call !== c) return;
     setCallText('يرن…'); S.fast = true; kick();
-    c.ringTimer = setTimeout(() => { if (call === c && !c.remoteSet) hangup('ما ردَّت'); }, 45000);
+    c.ringTimer = setTimeout(() => {
+      if (call === c && !c.remoteSet) { hangup('ما ردَّت'); sendMsg({type: 'text', text: '📞 مكالمة ' + (video ? 'فيديو ' : '') + 'فائتة'}); }
+    }, 60000);
   } catch (e) {
     if (call !== c) return;
     const why = (e.status ? 'GitHub ' + e.status : (e.name || '') + ' ' + (e.message || '')).slice(0, 120);
@@ -796,7 +799,7 @@ async function acceptCall() {
   S.handled.add(st.id); hideIncoming(); unlockAudio();
   let stream;
   try { stream = await getMedia(st.video); }
-  catch (e) { setStatus('اسمحي للموقع باستخدام المايك'); try { await writeCall(Object.assign({}, st, {status: 'declined'})); } catch (x) {} return; }
+  catch (e) { setStatus('ما قدرت أفتح المايك: اسمحي للموقع باستخدام المايك من إعدادات المتصفح'); try { await writeCall(Object.assign({}, st, {status: 'failed', reason: 'mic'})); } catch (x) {} return; }
   const c = call = {id: st.id, role: 'callee', video: st.video, stream, remoteSet: true};
   showCallUI(st.video, st.from, 'جارٍ الاتصال…');
   try {
